@@ -40,6 +40,7 @@ static int xmlrpcmethod_login(void *conn, int parc, char *parv[]);
 static int xmlrpcmethod_logout(void *conn, int parc, char *parv[]);
 static int xmlrpcmethod_command(void *conn, int parc, char *parv[]);
 static int xmlrpcmethod_privset(void *conn, int parc, char *parv[]);
+static int xmlrpcmethod_register(void *conn, int parc, char *parv[]);
 static int xmlrpcmethod_ison(void *conn, int parc, char *parv[]);
 static int xmlrpcmethod_metadata(void *conn, int parc, char *parv[]);
 
@@ -118,6 +119,7 @@ void _modinit(module_t *m)
 	xmlrpc_register_method("atheme.logout", xmlrpcmethod_logout);
 	xmlrpc_register_method("atheme.command", xmlrpcmethod_command);
 	xmlrpc_register_method("atheme.privset", xmlrpcmethod_privset);
+	xmlrpc_register_method("atheme.register", xmlrpcmethod_register);
 	xmlrpc_register_method("atheme.ison", xmlrpcmethod_ison);
 	xmlrpc_register_method("atheme.metadata", xmlrpcmethod_metadata);
 }
@@ -130,6 +132,7 @@ void _moddeinit(module_unload_intent_t intent)
 	xmlrpc_unregister_method("atheme.logout");
 	xmlrpc_unregister_method("atheme.command");
 	xmlrpc_unregister_method("atheme.privset");
+	xmlrpc_unregister_method("atheme.register");
 	xmlrpc_unregister_method("atheme.ison");
 	xmlrpc_unregister_method("atheme.metadata");
 
@@ -492,6 +495,108 @@ static int xmlrpcmethod_privset(void *conn, int parc, char *parv[])
 
 	return 0;
 }
+
+
+/*
+ * atheme.register
+ *
+ * XML inputs:
+ *       account name, service name, command name,
+ *       parameters.
+ *
+ * XML outputs:
+ *       depends on command
+ *
+ * Side Effects:
+ *       command is executed
+ */
+static int xmlrpcmethod_register(void *conn, int parc, char *parv[])
+{
+	myuser_t *mu = NULL;
+	service_t *svs;
+	command_t *cmd;
+	sourceinfo_t *si;
+	int newparc;
+	char *newparv[20];
+	struct httpddata *hd = ((connection_t *)conn)->userdata;
+	int i;
+
+	for (i = 0; i < parc; i++)
+	{
+		if (*parv[i] == '\0' || strchr(parv[i], '\r') || strchr(parv[i], '\n'))
+		{
+			xmlrpc_generic_error(fault_badparams, "Invalid parameters.");
+			return 0;
+		}
+	}
+
+	if (parc < 3)
+	{
+		xmlrpc_generic_error(fault_needmoreparams, "Insufficient parameters.");
+		return 0;
+	}
+
+	// if ((mu = myuser_find(parv[0])) != NULL)
+	// {
+	// 	xmlrpc_generic_error(fault_badparams, "User already exists.");
+	// 	return 0;
+	// }
+	// else
+	// 	mu = NULL;
+
+	/* try literal service name first, then user-configured nickname. */
+	svs = service_find("NICKSERV");
+	if (svs == NULL || svs->commands == NULL)
+	{
+		slog(LG_DEBUG, "xmlrpcmethod_command(): invalid service %s", "NICKSERV");
+		xmlrpc_generic_error(fault_nosuch_source, "Invalid service name.");
+		return 0;
+	}
+	
+	cmd = command_find(svs->commands, "REGISTER");
+	if (cmd == NULL)
+	{
+		xmlrpc_generic_error(fault_nosuch_source, "Invalid command name.");
+		return 0;
+	}
+
+	// memset(newparv, '\0', sizeof newparv);
+	// newparc = parc - 5;
+	// if (newparc > 20)
+	// 	newparc = 20;
+	// if (newparc > 0)
+	// 	memcpy(newparv, parv + 5, newparc * sizeof(parv[0]));
+
+	memset(newparv, '\0', sizeof newparv);
+	newparc = parc;
+	if (newparc > 20)
+		newparc = 20;
+	if (newparc > 0)
+		memcpy(newparv, parv, newparc * sizeof(parv[0]));
+
+	si = sourceinfo_create();
+	si->smu = mu;
+	si->service = svs;
+	si->sourcedesc = NULL;
+	si->connection = conn;
+	si->v = &xmlrpc_vtable;
+	si->force_language = language_find("en");
+	command_exec(svs, si, cmd, newparc, newparv);
+
+	/* XXX: needs to be fixed up for restartable commands... */
+	if (!hd->sent_reply)
+	{
+		if (hd->replybuf != NULL)
+			xmlrpc_send_string(hd->replybuf);
+		else
+			xmlrpc_generic_error(fault_unimplemented, "Command did not return a result.");
+	}
+
+	object_unref(si);
+
+	return 0;
+}
+
 
 /*
  * atheme.ison
