@@ -25,7 +25,8 @@ struct chansvs_
   char *real;                   /* the IRC client's realname  */
 
   bool fantasy;		/* enable fantasy commands    */
-
+  bool allow_register_without_join;
+  
   char *trigger;		/* trigger, e.g. !, ` or .    */
 
   bool changets;		/* use TS to better deop people */

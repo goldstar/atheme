@@ -82,22 +82,23 @@ static void cs_cmd_register(sourceinfo_t *si, int parc, char *parv[])
 		return;
 	}
 
+	c = channel_find(name);
+
 	/* make sure the channel exists */
-	if (!(c = channel_find(name)))
+	if (!(chansvs.allow_register_without_join) && !(c))
 	{
-		command_fail(si, fault_nosuch_target, _("The channel \2%s\2 must exist in order to register it."), name);
-		return;
+			command_fail(si, fault_nosuch_target, _("The channel \2%s\2 must exist in order to register it."), name);
+			return;
 	}
 
-	/* make sure they're in it */
-	if (!(cu = chanuser_find(c, si->su)))
+	if (c && !(cu = chanuser_find(c, si->su)))
 	{
 		command_fail(si, fault_noprivs, _("You must be in \2%s\2 in order to register it."), name);
 		return;
 	}
 
 	/* make sure they're opped (or protected/owner on unreal/inspircd) */
-	if (!((CSTATUS_OP | CSTATUS_PROTECT | CSTATUS_OWNER) & cu->modes))
+	if (c && (!((CSTATUS_OP | CSTATUS_PROTECT | CSTATUS_OWNER) & cu->modes)))
 	{
 		command_fail(si, fault_noprivs, _("You must be a channel operator in \2%s\2 in order to register it."), name);
 		return;
@@ -142,15 +143,15 @@ static void cs_cmd_register(sourceinfo_t *si, int parc, char *parv[])
 	mc->registered = CURRTIME;
 	mc->used = CURRTIME;
 	mc->mlock_on |= (CMODE_NOEXT | CMODE_TOPIC);
-	if (c->limit == 0)
+	if ((c) && (c->limit == 0))
 		mc->mlock_off |= CMODE_LIMIT;
-	if (c->key == NULL)
+	if ((c) && (c->key == NULL))
 		mc->mlock_off |= CMODE_KEY;
 	mc->flags |= config_options.defcflags;
 
 	chanacs_add(mc, entity(si->smu), custom_founder_check(), CURRTIME, entity(si->smu));
-
-	if (c->ts > 0)
+	
+	if ((c) && (c->ts > 0))
 	{
 		snprintf(str, sizeof str, "%lu", (unsigned long)c->ts);
 		metadata_add(mc, "private:channelts", str);
@@ -167,7 +168,15 @@ static void cs_cmd_register(sourceinfo_t *si, int parc, char *parv[])
 	hook_call_channel_register(&hdata);
 	/* Allow the hook to override this. */
 	fl = chanacs_source_flags(mc, si);
-	cu = chanuser_find(mc->chan, si->su);
+	
+	if (c)
+	{
+		cu = chanuser_find(mc->chan, si->su);
+	}
+	else
+	{
+		cu = NULL;
+	}
 	if (cu == NULL)
 		;
 	else if (ircd->uses_owner && fl & CA_USEOWNER && fl & CA_AUTOOP &&

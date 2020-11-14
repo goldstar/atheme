@@ -304,6 +304,7 @@ void _modinit(module_t *m)
 	add_conf_item("TEMPLATES", &chansvs.me->conf_table, c_ci_templates);
 	add_bool_conf_item("CHANGETS", &chansvs.me->conf_table, 0, &chansvs.changets, false);
 	add_bool_conf_item("HIDE_XOP", &chansvs.me->conf_table, 0, &chansvs.hide_xop, false);
+	add_bool_conf_item("ALLOW_REGISTER_WITHOUT_JOIN", &chansvs.me->conf_table, 0, &chansvs.allow_register_without_join, false);
 	add_dupstr_conf_item("TRIGGER", &chansvs.me->conf_table, 0, &chansvs.trigger, "!");
 	add_duration_conf_item("EXPIRE", &chansvs.me->conf_table, 0, &chansvs.expiry, "d", 0);
 	add_uint_conf_item("MAXCHANS", &chansvs.me->conf_table, 0, &chansvs.maxchans, 1, INT_MAX, 5);
