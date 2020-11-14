@@ -501,14 +501,12 @@ static int xmlrpcmethod_privset(void *conn, int parc, char *parv[])
  *
  * XML outputs:
  *       boolean: if nickname is online
- *       string: if nickname is authenticated, what entity they are authed to,
- *       else '*'
  */
 static int xmlrpcmethod_ison(void *conn, int parc, char *parv[])
 {
 	user_t *u;
 	int i;
-	char buf[XMLRPC_BUFSIZE], buf2[XMLRPC_BUFSIZE];
+	char buf[XMLRPC_BUFSIZE];
 
 	for (i = 0; i < parc; i++)
 	{
@@ -529,14 +527,12 @@ static int xmlrpcmethod_ison(void *conn, int parc, char *parv[])
 	if (u == NULL)
 	{
 		xmlrpc_boolean(buf, false);
-		xmlrpc_string(buf2, "*");
-		xmlrpc_send(2, buf, buf2);
+		xmlrpc_send(1, buf);
 		return 0;
 	}
 
 	xmlrpc_boolean(buf, true);
-	xmlrpc_string(buf2, u->myuser != NULL ? entity(u->myuser)->name : "*");
-	xmlrpc_send(2, buf, buf2);
+	xmlrpc_send(1, buf);
 
 	return 0;
 }
