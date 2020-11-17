@@ -94,6 +94,7 @@ static void bs_cmd_say(sourceinfo_t *si, int parc, char *parv[])
 		{
 			msg(svs->me->nick, channel, "%s", message);
 			logcommand(si, CMDLOG_DO, "SVS SAY:\2%s\2: \2%s\2", channel, message);
+			command_success_nodata(si, "SVS SAY:\2%s\2: \2%s\2", channel, message);
 		}
 		else
 		{
@@ -112,6 +113,7 @@ static void bs_cmd_say(sourceinfo_t *si, int parc, char *parv[])
 		msg(bot->nick, channel, "%s", message);
 		logcommand(si, CMDLOG_DO, "SAY:\2%s\2: \2%s\2", channel, message);
 	}
+	
 }
 
 static void bs_cmd_act(sourceinfo_t *si, int parc, char *parv[])
