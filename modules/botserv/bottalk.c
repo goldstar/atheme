@@ -81,13 +81,27 @@ static void bs_cmd_say(sourceinfo_t *si, int parc, char *parv[])
 		bot = user_find_named(bs->value);
 	else
 		bot = NULL;
+
 	if (bot == NULL)
 	{
-		command_fail(si, fault_nosuch_key, _("\2%s\2 does not have a bot assigned."), mc->name);
-		return;
-	}
+		service_t *svs = NULL;
+		svs = service_find("chanserv");
 
-	if (metadata_find(mc, "private:botserv:saycaller"))
+		if (svs == NULL)
+			svs = service_find_any();
+
+		if (svs != NULL && svs->me != NULL)
+		{
+			msg(svs->me->nick, channel, "%s", message);
+			logcommand(si, CMDLOG_DO, "SVS SAY:\2%s\2: \2%s\2", channel, message);
+		}
+		else
+		{
+			command_fail(si, fault_nosuch_key, _("\2%s\2 does not have a bot assigned."), mc->name);
+			return;
+		}		
+	}
+	else if (metadata_find(mc, "private:botserv:saycaller"))
 	{
 		snprintf(saybuf, BUFSIZE, "%s", get_source_name(si));
 		msg(bot->nick, channel, "(%s) %s", saybuf, message);
@@ -95,9 +109,8 @@ static void bs_cmd_say(sourceinfo_t *si, int parc, char *parv[])
 	}
 	else 
 	{
-
-	msg(bot->nick, channel, "%s", message);
-	logcommand(si, CMDLOG_DO, "SAY:\2%s\2: \2%s\2", channel, message);
+		msg(bot->nick, channel, "%s", message);
+		logcommand(si, CMDLOG_DO, "SAY:\2%s\2: \2%s\2", channel, message);
 	}
 }
 

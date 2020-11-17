@@ -91,7 +91,7 @@ static void cs_cmd_register(sourceinfo_t *si, int parc, char *parv[])
 			return;
 	}
 
-	if (c && !(cu = chanuser_find(c, si->su)))
+	if (c && !(chansvs.allow_register_without_join) && !(cu = chanuser_find(c, si->su)))
 	{
 		command_fail(si, fault_noprivs, _("You must be in \2%s\2 in order to register it."), name);
 		return;
