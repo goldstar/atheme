@@ -701,6 +701,13 @@ static int xmlrpcmethod_metadata(void *conn, int parc, char *parv[])
 			return 0;
 		}
 
+    if (parc > 2)
+		{
+				metadata_add(mt, parv[1], parv[2]);
+				xmlrpc_string(buf, parv[2]);
+				xmlrpc_send(1, buf);
+				return 0;
+		}
 		md = metadata_find(mt, parv[1]);
 	}
 

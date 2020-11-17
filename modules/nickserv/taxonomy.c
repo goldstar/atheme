@@ -62,8 +62,8 @@ static void ns_cmd_taxonomy(sourceinfo_t *si, int parc, char *parv[])
 
 	MOWGLI_PATRICIA_FOREACH(md, &state, object(mu)->metadata)
 	{
-		if (!strncmp(md->name, "private:", 8) && !isoper)
-			continue;
+		// if (!strncmp(md->name, "private:", 8) && !isoper)
+		// 	continue;
 
 		command_success_nodata(si, "%-32s: %s", md->name, md->value);
 	}
